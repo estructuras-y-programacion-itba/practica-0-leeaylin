@@ -3,52 +3,77 @@ import random
 import csv
 
 def tirar_dados():
-    return [random.randint(1,6) for n in range(5)]
+    return [random.randint(1,6) for _ in range(5)]
     
 def elegir_dados(dados):
-    print(f"Dados actuales:{dados}")
-    seleccion = input("ingresar el/los indice/s (0-4) de los dados que deseas mantener separados por una coma:").strip()
+    print("Dados actuales:", dados)
 
-    indices = []
-    for i in seleccion.split(","):
+    while True:
+        seleccion = input("Ingresa los valores de los dados que deseas mantener separados por coma: ").strip()
+        if seleccion == "":
+            valores = []
+            break
         try:
-            indice = int(i)  # Intentamos convertir el valor a entero
-            indices.append(dados[i])  # Si es válido, lo agregamos a la lista
+            valores = [int(i) for i in seleccion.split(",")]
+            copia = dados[:]
+            valido = True
+            for valor in valores:
+                if valor in copia:
+                    copia.remove(valor)
+                else:
+                    valido = False
+                    break
+            if valido:
+                break
+            else:
+                print("Has ingresado valores que no coinciden con los dados actuales. Intenta de nuevo.")
+
         except ValueError:
-            print(f"'{i}' no es un número válido y será ignorado.")  # Informamos al usuario
+            print("Entrada inválida. Asegúrate de ingresar números separados por comas.")
 
-    dados_mantenidos = []
-    for i in indices:
-        if 0 <= i < len(dados): # Verificamos que el índice esté dentro del rango válido
-            dados_mantenidos.append(dados[i]) # Agregamos el dado correspondiente a la lista
+    copia = dados[:]
+    dados_guardados = []
 
-    # Calculo cuántos dados deben volver a lanzarse
-    dados_nuevos = len(dados) - len(dados_mantenidos)
-    nuevos_dados = [random.randint(1, 6) for i in range(dados_nuevos)]  # Lanzar nuevos dados
+    for valor in valores:
+        copia.remove(valor)
+        dados_guardados.append(valor)
 
-    # Combinar los dados mantenidos con los nuevos lanzados
-    resultado_final = dados_mantenidos + nuevos_dados
-    print(f"Resultado final: {resultado_final}")
+    nuevos_dados = [random.randint(1, 6) for _ in range(5 - len(dados_guardados))]
+
+    print("Dados guardados:", dados_guardados)
+    print("Dados nuevos:", nuevos_dados)
+
+    resultado_final = dados_guardados + nuevos_dados
     return resultado_final
 
 def jugar_turno():
     print("Comienza el turno del jugador.")
     dados = tirar_dados()
-    print(f"Primera tirada: {dados}")
+    print("Primera tirada:", dados)
 
-    for tirada in range(2): #dos lanzamientos
-        while True:
-            decision = input("Desea relanzar los dados? (s/n): ").strip().lower()
-            if decision == "s":
-                dados = elegir_dados(dados)
-                break
-            elif decision == "n":
-                return dados
-            else:
-                print("Opcion invalida. Reingrese 's' o 'n'.")
-                #!!!!!!!Chequear aca, la parte del bucle y que se vuelven a pedir el input hasta que sea uno valido. 
+    primera_tirada = True
+    for tirada in range(2):
+        decision = input("¿Desea relanzar los dados? (s/n): ").strip().lower()
 
+        while decision != "s" and decision != "n":
+            print("Opción inválida.")
+            decision = input("¿Desea relanzar los dados? (s/n): ").strip().lower()
+
+        if decision == "n":
+            return dados, primera_tirada
+
+        dados = elegir_dados(dados)
+        primera_tirada = False
+
+        print("Nueva tirada:", dados)
+
+    return dados, primera_tirada
+
+                
 def contar_valores(dados):
+    if isinstance(dados[0], list):
+        dados = dados[0]
+
     conteos = [0] * 7
     for dado in dados:
         conteos[dado] += 1
@@ -119,44 +144,123 @@ def calcular_puntaje_categoria(categoria, dados, primera_tirada):
 
     return 0
 
+def crear_planilla():
+    planilla = [
+        [None]*10,
+        [None]*10
+    ]
+    return planilla
+
+
+def mostrar_planilla(planilla):
+    categorias = ["E","F","P","G","1","2","3","4","5","6"]
+    print("\nPLANILLA")
+    print("Jugada\tJ1\tJ2")
+
+    for i in range(10):
+        j1 = planilla[0][i]
+        j2 = planilla[1][i]
+        if j1 is None:
+            j1 = "-"
+        if j2 is None:
+            j2 = "-"
+        print(f"{categorias[i]}\t{j1}\t{j2}")
+
+
+def guardar_csv(planilla):
+    categorias = ["E","F","P","G","1","2","3","4","5","6"]
+    archivo = open("jugadas.csv","w")
+    archivo.write("jugada,j1,j2\n")
+    for i in range(10):
+        j1 = planilla[0][i]
+        j2 = planilla[1][i]
+        if j1 is None:
+            j1 = ""
+        if j2 is None:
+            j2 = ""
+        archivo.write(categorias[i] + "," + str(j1) + "," + str(j2) + "\n")
+    archivo.close()
+
+
+def categorias_disponibles(planilla, jugador):
+    disponibles = []
+    for i in range(10):
+        if planilla[jugador][i] is None:
+            disponibles.append(i)
+    return disponibles
+
+
+def total_jugador(planilla, jugador):
+    total = 0
+    for valor in planilla[jugador]:
+        if valor is not None:
+            total += valor
+    return total
+
+
+def planilla_completa(planilla):
+    for jugador in range(2):
+        for valor in planilla[jugador]:
+            if valor is None:
+                return False
+    return True
+
 def main():
     print("¡Bienvenidos al juego de Generala!")
-    jugadores = ["Jugador 1", "Jugador 2"]
-    puntajes = [0, 0] 
-    categorias_usadas = [[], []]
 
-    for i, jugador in enumerate(jugadores):
-        print(f"\nTurno de {jugador}")
-        dados = jugar_turno()
-        print(f"Dados finales: {dados}")
+    categorias = ["E","F","P","G","1","2","3","4","5","6"]
 
-        # Mostrar categorías disponibles
-        print("Categorías disponibles:")
-        categorias_disponibles = [cat for cat in ["E", "F", "P", "G", "1", "2", "3", "4", "5", "6"] if cat not in categorias_usadas[i]]
-        print(", ".join(categorias_disponibles))
+    planilla = crear_planilla()
 
-        # Elegir categoría
-        while True:
-            categoria = input("Elige una categoría para anotar tu puntaje: ").strip().upper()
-            if categoria in categorias_disponibles:
-                break
-            print("Categoría no válida o ya utilizada. Intenta de nuevo.")
+    guardar_csv(planilla)
 
-        # Calcular puntaje
-        primera_tirada = False 
-        puntaje = calcular_puntaje_categoria(categoria, dados, primera_tirada)
-        print(f"Puntaje obtenido: {puntaje}")
+    while not planilla_completa(planilla):
 
-        # Actualizar puntajes y categorías usadas
-        puntajes[i] += puntaje
-        categorias_usadas[i].append(categoria)
+        for jugador in range(2):
+            disponibles = categorias_disponibles(planilla, jugador)
+            if len(disponibles) == 0:
+                continue
+            print(f"\nTurno del Jugador {jugador+1}")
+            dados, primera_tirada = jugar_turno()
+            print(f"Dados finales: {dados}")
 
-    # Mostrar resultados finales
-    print("\nResultados finales:")
-    for i, jugador in enumerate(jugadores):
-        print(f"{jugador}: {puntajes[i]} puntos")
+            if es_generala(dados):
+                print("¡GENERALA!")
+            print("Categorías disponibles:")
+            for i in disponibles:
+                print(categorias[i], end=" ")
+            print()
 
-    
+            while True:
+                categoria = input("Elige categoría: ").strip().upper()
+                if categoria in categorias:
+                    indice = categorias.index(categoria)
+                    if indice in disponibles:
+                        break
+                print("Categoría inválida o ya usada.")
+
+            puntaje = calcular_puntaje_categoria(categoria, dados, primera_tirada)
+            if puntaje is None:
+                puntaje = 0
+            print("Puntaje obtenido:", puntaje)
+            planilla[jugador][indice] = puntaje
+            guardar_csv(planilla)
+            mostrar_planilla(planilla)
+
+    print("\nRESULTADOS FINALES")
+
+    total_j1 = total_jugador(planilla,0)
+    total_j2 = total_jugador(planilla,1)
+
+    print("Jugador 1:", total_j1)
+    print("Jugador 2:", total_j2)
+
+    if total_j1 > total_j2:
+        print("Ganó Jugador 1")
+    elif total_j2 > total_j1:
+        print("Ganó Jugador 2")
+    else:
+        print("Empate")
 
 # No cambiar a partir de aqui
 if __name__ == "__main__":
