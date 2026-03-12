@@ -7,7 +7,7 @@ def tirar_dados():
     
 def elegir_dados(dados):
     print(f"Dados actuales:{dados}")
-    seleccion = input("ingresar el/los indice/s (0-5) de los dados que deseas mantener separados por una coma:").strip()
+    seleccion = input("ingresar el/los indice/s (0-4) de los dados que deseas mantener separados por una coma:").strip()
 
     indices = []
     for i in seleccion.split(","):
@@ -119,8 +119,45 @@ def calcular_puntaje_categoria(categoria, dados, primera_tirada):
 
     return 0
 
+def main():
+    print("¡Bienvenidos al juego de Generala!")
+    jugadores = ["Jugador 1", "Jugador 2"]
+    puntajes = [0, 0] 
+    categorias_usadas = [[], []]
+
+    for i, jugador in enumerate(jugadores):
+        print(f"\nTurno de {jugador}")
+        dados = jugar_turno()
+        print(f"Dados finales: {dados}")
+
+        # Mostrar categorías disponibles
+        print("Categorías disponibles:")
+        categorias_disponibles = [cat for cat in ["E", "F", "P", "G", "1", "2", "3", "4", "5", "6"] if cat not in categorias_usadas[i]]
+        print(", ".join(categorias_disponibles))
+
+        # Elegir categoría
+        while True:
+            categoria = input("Elige una categoría para anotar tu puntaje: ").strip().upper()
+            if categoria in categorias_disponibles:
+                break
+            print("Categoría no válida o ya utilizada. Intenta de nuevo.")
+
+        # Calcular puntaje
+        primera_tirada = False 
+        puntaje = calcular_puntaje_categoria(categoria, dados, primera_tirada)
+        print(f"Puntaje obtenido: {puntaje}")
+
+        # Actualizar puntajes y categorías usadas
+        puntajes[i] += puntaje
+        categorias_usadas[i].append(categoria)
+
+    # Mostrar resultados finales
+    print("\nResultados finales:")
+    for i, jugador in enumerate(jugadores):
+        print(f"{jugador}: {puntajes[i]} puntos")
+
     
 
-# # No cambiar a partir de aqui
-# if __name__ == "__main__":
-#     main()
+# No cambiar a partir de aqui
+if __name__ == "__main__":
+    main()
