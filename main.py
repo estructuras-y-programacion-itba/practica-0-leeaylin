@@ -48,6 +48,78 @@ def jugar_turno():
                 print("Opcion invalida. Reingrese 's' o 'n'.")
                 #!!!!!!!Chequear aca, la parte del bucle y que se vuelven a pedir el input hasta que sea uno valido. 
 
+def contar_valores(dados):
+    conteos = [0] * 7
+    for dado in dados:
+        conteos[dado] += 1
+    return conteos
+
+
+def es_escalera(dados):
+    ordenados = sorted(dados)
+    return ordenados == [1, 2, 3, 4, 5] or ordenados == [2, 3, 4, 5, 6]
+
+
+def es_full(dados):
+    conteos = contar_valores(dados)
+    hay_tres = False
+    hay_dos = False
+
+    for i in range(1, 7):
+        if conteos[i] == 3:
+            hay_tres = True
+        elif conteos[i] == 2:
+            hay_dos = True
+
+    return hay_tres and hay_dos
+
+def es_poker(dados):
+    conteos = contar_valores(dados)
+    for i in range(1, 7):
+        if conteos[i] >= 4:
+            return True
+    return False
+
+
+def es_generala(dados):
+    conteos = contar_valores(dados)
+    for i in range(1, 7):
+        if conteos[i] == 5:
+            return True
+    return False
+
+def calcular_puntaje_categoria(categoria, dados, primera_tirada):
+    if categoria == "E":
+        if es_escalera(dados):
+            return 25 if primera_tirada else 20
+        return None
+
+    if categoria == "F":
+        if es_full(dados):
+            return 35 if primera_tirada else 30
+        return None
+
+    if categoria == "P":
+        if es_poker(dados):
+            return 45 if primera_tirada else 40
+        return None
+
+    if categoria == "G":
+        if es_generala(dados):
+            return 80 if primera_tirada else 50
+        return None
+
+    if categoria in ["1", "2", "3", "4", "5", "6"]:
+        numero = int(categoria)
+        suma = 0
+        for dado in dados:
+            if dado == numero:
+                suma += dado
+        return suma
+
+    return 0
+
+    
 
 # # No cambiar a partir de aqui
 # if __name__ == "__main__":
